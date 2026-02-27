@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="NewsSite.Api/NewsSite.Api.csproj" />
+  <Project Path="NewsSite.Application/NewsSite.Application.csproj" />
+  <Project Path="NewsSite.Domain/NewsSite.Domain.csproj" />
+  <Project Path="NewsSite.Infrastructure/NewsSite.Infrastructure.csproj" />
+</Solution>
