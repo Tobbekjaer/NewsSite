@@ -1,0 +1,58 @@
+# -----------------------------
+# Build output
+# -----------------------------
+[Bb]in/
+[Oo]bj/
+
+# -----------------------------
+# Rider / IntelliJ
+# -----------------------------
+.idea/
+*.sln.iml
+*.DotSettings.user
+
+# -----------------------------
+# Visual Studio
+# -----------------------------
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# -----------------------------
+# NuGet
+# -----------------------------
+*.nupkg
+*.snupkg
+packages/
+project.assets.json
+project.nuget.cache
+
+# -----------------------------
+# Logs / temp
+# -----------------------------
+*.log
+*.tmp
+*.cache
+*.pid
+*.svclog
+
+# -----------------------------
+# Test results
+# -----------------------------
+TestResult*/
+[Tt]est[Rr]esult*/
+
+# -----------------------------
+# OS files
+# -----------------------------
+.DS_Store
+Thumbs.db
+
+# -----------------------------
+# SQLite database (optional for dev)
+# -----------------------------
+*.db
+*.db-shm
+*.db-wal
