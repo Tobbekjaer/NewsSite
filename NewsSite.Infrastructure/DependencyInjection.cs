@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -21,6 +22,20 @@ public static class DependencyInjection
             })
             .AddEntityFrameworkStores<AppDbContext>()
             .AddDefaultTokenProviders();
+
+        services.ConfigureApplicationCookie(options =>
+        {
+            options.Events.OnRedirectToLogin = ctx =>
+            {
+                ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                return Task.CompletedTask;
+            };
+            options.Events.OnRedirectToAccessDenied = ctx =>
+            {
+                ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+                return Task.CompletedTask;
+            };
+        });
 
         return services;
     }
