@@ -1,101 +1,58 @@
-using System;
-using System.Text;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.IdentityModel.Logging;
 using NewsSite.Api.Auth;
+using NewsSite.Api.Extensions;
 using NewsSite.Api.Seed;
 using NewsSite.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Controllers
-builder.Services.AddControllers();
+IdentityModelEventSource.ShowPII = true;
 
-// Infrastructure (DbContext + Identity)
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(o =>
+    {
+        o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+    });
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerWithJwt();
+
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// AuthN + AuthZ (JWT)
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        var jwt = builder.Configuration.GetSection("Jwt");
-        var keyBytes = Encoding.UTF8.GetBytes(jwt["Key"]!);
-        
-        if (keyBytes.Length == 0)
-        {
-            throw new InvalidOperationException("JWT key is missing. Set Jwt:Key via user-secrets.");
-        }
-
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = jwt["Issuer"],
-            ValidAudience = jwt["Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
-            ClockSkew = TimeSpan.FromSeconds(30)
-        };
-    });
-
-builder.Services.AddAuthorization();
-
-// Swagger + Bearer support
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new() { Title = "NewsSite API", Version = "v1" });
-
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Description = "Paste: Bearer {token}"
-    });
-
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
-    });
-});
-
-// App services
+builder.Services.AddJwtAuth(builder.Configuration);
 builder.Services.AddScoped<JwtTokenService>();
+builder.Services.AddScoped<IAuthorizationHandler, ArticleAuthorizationHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, CommentAuthorizationHandler>();
+
 
 var app = builder.Build();
 
-// Seed roles/users in Development
+app.UseSwagger();
+app.UseSwaggerUI();
+
 if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
     await IdentitySeeder.SeedAsync(scope.ServiceProvider);
-
-    app.UseSwagger();
-    app.UseSwaggerUI();
 }
 
-// Pipeline
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Debug for dev
+app.MapGet("/_debug/path", (HttpRequest req) => Results.Ok(new { req.PathBase, req.Path }));
+app.MapGet("/_debug/endpoints", (IEnumerable<EndpointDataSource> sources) =>
+{
+    var endpoints = sources.SelectMany(s => s.Endpoints)
+        .Select(e => new { e.DisplayName, routePattern = (e as RouteEndpoint)?.RoutePattern.RawText })
+        .OrderBy(x => x.routePattern)
+        .ToList();
+    return Results.Ok(endpoints);
+});
 
 app.Run();
