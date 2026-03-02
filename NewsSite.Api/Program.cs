@@ -1,10 +1,12 @@
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Logging;
 using NewsSite.Api.Auth;
 using NewsSite.Api.Extensions;
 using NewsSite.Api.Seed;
 using NewsSite.Infrastructure;
+using NewsSite.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,23 +38,17 @@ app.UseSwaggerUI();
 if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
+
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();
+
     await IdentitySeeder.SeedAsync(scope.ServiceProvider);
+    await DomainSeeder.SeedAsync(scope.ServiceProvider);
 }
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
-// Debug for dev
-app.MapGet("/_debug/path", (HttpRequest req) => Results.Ok(new { req.PathBase, req.Path }));
-app.MapGet("/_debug/endpoints", (IEnumerable<EndpointDataSource> sources) =>
-{
-    var endpoints = sources.SelectMany(s => s.Endpoints)
-        .Select(e => new { e.DisplayName, routePattern = (e as RouteEndpoint)?.RoutePattern.RawText })
-        .OrderBy(x => x.routePattern)
-        .ToList();
-    return Results.Ok(endpoints);
-});
 
 app.Run();
