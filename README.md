@@ -66,7 +66,7 @@ dotnet run --project NewsSite.Api
 ## Open Swagger
 Open Swagger in your browser:
 
-[http://localhost:5038/swagger)](http://localhost:5038/swagger)
+[http://localhost:5038/swagger](http://localhost:5038/swagger)
 
 ---
 
