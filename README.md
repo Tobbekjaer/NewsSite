@@ -72,17 +72,16 @@ Open Swagger in your browser:
 
 ## Test Users (Seeded in Development)
 
-All users use the password:
-```bash
-Password1!
-```
-
-
 | Email                  | Role        |
 |------------------------|------------|
 | subscriber@test.com    | Subscriber |
 | writer@test.com        | Writer     |
 | editor@test.com        | Editor     |
+
+All users use the password:
+```bash
+Password1!
+```
 
 ---
 
